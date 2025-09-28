@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>관리자 파일 업로드</title>
+  <style>
+    :root {
+      --bg: #f9fafb;
+      --ink: #111827;
+      --muted: #6b7280;
+      --brand: #2563eb;   /* 포인트 블루 */
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Pretendard, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    header {
+      height: 64px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      background: #fff;
+      font-weight: 700;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    p.sub {
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    /* 업로드 박스 */
+    .upload-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 40px;
+      display: flex;
+      gap: 12px;
+    }
+    .upload-box input[type=file] {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px;
+      font-size: 0.95rem;
+    }
+    .btn {
+      background: var(--brand);
+      border: none;
+      color: #fff;
+      padding: 0 18px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s ease;
+    }
+    .btn:hover {
+      background: #1d4ed8;
+    }
+    #msg {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    /* 카드 리스트 */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    }
+    .card-img {
+      position: relative;
+      width: 100%;
+      height: 160px;
+      overflow: hidden;
+    }
+    .card-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: #111827;
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+    .card-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+    .date {
+      font-size: 0.85rem;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .card-desc {
+      font-size: 0.9rem;
+      color: #6b7280;
+      line-height: 1.4;
+      flex: 1;
+    }
+    .download-btn {
+      margin-top: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #111827;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      text-decoration: none;
+    }
+    .download-btn:hover {
+      background: #1f2937;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    📊 관리자 파일 업로드
+  </header>
+
+  <div class="container">
+    <h2>리포트 업로드 & 목록</h2>
+    <p class="sub">리포트 파일을 업로드하고, 카드형 목록에서 확인하세요.</p>
+
+    <!-- 업로드 박스 -->
+    <div class="upload-box">
+      <form id="uploadForm" style="display:flex; gap:12px; flex:1;">
+        <input type="file" id="fileInput" required>
+        <button type="submit" class="btn">업로드</button>
+      </form>
+    </div>
+    <div id="msg"></div>
+
+    <!-- 파일 카드 목록 -->
+    <div id="fileGrid" class="grid">
+      <p>불러오는 중...</p>
+    </div>
+  </div>
+
+  <script>
+    const API_UPLOAD = "http://localhost:8080/admin/upload"; 
+    const API_FILES = "http://localhost:8080/files";        
+    const ADMIN_KEY = "my-secret-1234"; 
+
+    // 업로드 이벤트
+    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const file = document.getElementById("fileInput").files[0];
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const res = await fetch(API_UPLOAD, {
+          method: "POST",
+          headers: { "X-ADMIN-KEY": ADMIN_KEY },
+          body: formData
+        });
+        const data = await res.json();
+        document.getElementById("msg").innerText = data.message;
+
+        if (data.success) loadFiles();
+      } catch (err) {
+        document.getElementById("msg").innerText = "에러: " + err;
+      }
+    });
+
+    // 파일 목록 불러오기
+    async function loadFiles() {
+      try {
+        const res = await fetch(API_FILES);
+        if (!res.ok) throw new Error("서버 응답 오류");
+
+        const files = await res.json();
+        const grid = document.getElementById("fileGrid");
+        grid.innerHTML = "";
+
+        if (files.length === 0) {
+          grid.innerHTML = "<p>업로드된 리포트가 없습니다.</p>";
+          return;
+        }
+
+        files.forEach(file => {
+            const date = new Date(file.lastModified).toLocaleDateString("ko-KR", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit"
+            });
+
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+                <div class="card-img">
+                <img src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=1600&auto=format&fit=crop" alt="리포트 이미지"/>
+                <div class="badge">리포트</div>
+                </div>
+                <div class="card-body">
+                <div class="date">📅 ${date}</div>
+                <div class="card-title">${file.name}</div>
+                <div class="card-desc">업로드된 리포트 파일입니다. 다운로드하여 확인하세요.</div>
+                <a href="${file.url}" target="_blank" download class="download-btn">⬇ 다운로드</a>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+      } catch (err) {
+        document.getElementById("fileGrid").innerHTML =
+          "<p>리포트 불러오기 실패: " + err + "</p>";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadFiles);
+  </script>
+</body>
+</html>
