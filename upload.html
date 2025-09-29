@@ -229,31 +229,51 @@
         }
 
         files.forEach(file => {
-            const date = new Date(file.lastModified).toLocaleDateString("ko-KR", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit"
-            });
+          const date = new Date(file.lastModified).toLocaleDateString("ko-KR");
 
-            const card = document.createElement("div");
-            card.className = "card";
-            card.innerHTML = `
-                <div class="card-img">
-                <img src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=1600&auto=format&fit=crop" alt="리포트 이미지"/>
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+              <div class="card-img">
+                <img src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=1600&auto=format&fit=crop"/>
                 <div class="badge">리포트</div>
-                </div>
-                <div class="card-body">
+              </div>
+              <div class="card-body">
                 <div class="date">📅 ${date}</div>
                 <div class="card-title">${file.name}</div>
-                <div class="card-desc">업로드된 리포트 파일입니다. 다운로드하여 확인하세요.</div>
+                <button onclick="deleteFile('${file.key}')">삭제</button>
+                <div class="card-desc">업로드된 리포트 파일입니다.</div>
                 <a href="${file.url}" target="_blank" download class="download-btn">⬇ 다운로드</a>
-                </div>
-            `;
-            grid.appendChild(card);
+              </div>
+          `;
+          grid.appendChild(card);
         });
+
       } catch (err) {
         document.getElementById("fileGrid").innerHTML =
           "<p>리포트 불러오기 실패: " + err + "</p>";
+      }
+    }
+
+    async function deleteFile(key) {
+      if (!key) {
+        alert("삭제할 파일 key가 없습니다!");
+        return;
+      }
+
+      if (!confirm("정말 삭제하시겠습니까?")) return;
+
+      try {
+        const res = await fetch(`https://companybackend-production.up.railway.app/admin/delete?key=${encodeURIComponent(key)}`, {
+          method: "POST",
+          headers: { "X-ADMIN-KEY": ADMIN_KEY }
+        });
+
+        if (!res.ok) throw new Error("삭제 실패");
+        alert("삭제 완료!");
+        loadFiles(); // ✅ 올바른 함수명
+      } catch (err) {
+        alert("에러 발생: " + err.message);
       }
     }
 
